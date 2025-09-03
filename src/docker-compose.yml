@@ -1,4 +1,5 @@
 name: 'otel-simple'
+
 services:
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
@@ -8,7 +9,11 @@ services:
     command: ["--config=/etc/otel-collector-config.yaml"]
     ports:
       - "4318:4318"
+      - "4317:4317"
       - "9999:9999"
+      - "13133:13133"
+      - "1777:1777"
+      - "55679:55679"
     networks:
       - observability
 
@@ -51,17 +56,17 @@ services:
       - observability
 
   tempo:
-   image: grafana/tempo:latest
-   restart: unless-stopped
-   command: -config.file=/etc/tempo/config.yaml
-   volumes:
-     - ./config-tempo.yaml:/etc/tempo/config.yaml:ro
-     - tempo-storage:/var/tempo
-   ports:
-     - "3200:3200"
-     - "4317:4317"
-   networks:
-     - observability
+    image: grafana/tempo:latest
+    restart: unless-stopped
+    command: -config.file=/etc/tempo/config.yaml
+    volumes:
+      - ./config-tempo.yaml:/etc/tempo/config.yaml:ro
+      - tempo-storage:/var/tempo
+    ports:
+      - "3200:3200"
+      - "3201:3201"
+    networks:
+      - observability
 
 volumes:
   grafana-storage:
