@@ -13,7 +13,7 @@ public class OrderWorker : BackgroundService
     private readonly Faker _faker = new Faker();
     private readonly Faker<Product> _productFaker;
     private readonly Faker<Customer> _customerFaker;
-    private readonly Counter<decimal> _orderValueCounter;
+    private readonly Histogram<double> _orderValueHistogram;
     private readonly Counter<int> _productCounter;
 
     public OrderWorker(ILogger<OrderWorker> logger, OrderMetrics metrics)
@@ -31,7 +31,7 @@ public class OrderWorker : BackgroundService
             .RuleFor(c => c.Email, f => f.Internet.Email())
             .RuleFor(c => c.Country, f => f.Address.Country());
 
-        _orderValueCounter = metrics.OrderValueCounter;
+        _orderValueHistogram = metrics.OrderValueHistogram;
         _productCounter = metrics.ProductCounter;
     }
 
@@ -78,7 +78,7 @@ public class OrderWorker : BackgroundService
                         _productCounter.Add(1, new KeyValuePair<string, object?>("category", product.Category));
                     }
 
-                    _orderValueCounter.Add(orderTotal);
+                    _orderValueHistogram.Record((double)orderTotal);
 
                     if (_faker.Random.Int(1, 100) <= 5)
                     {
