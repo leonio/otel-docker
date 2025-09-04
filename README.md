@@ -1,6 +1,10 @@
 # (very... very...) Basic OTEL setup with Docker
 The most basic, vanilla setup with docker-compose for an OTEL stack consisting of prom, grafana, loki and tempo.
 
+There are so many great examples online, however some of them are using older versions and some aren't taking full advantage of the otel/otelhttp exporters (or even exporting directly to prom/jaeger/tempo instead of taking advantage of the otel-collector).
+
+This is a quick and dirty attempt to see what's involved in setting up a local config that is sorta, kinda close to what one could expect with a vanilla setup in mid-2025.
+
 ## 0. Docker Compose Setup
 bring the stack up:
 ```pwsh
@@ -55,8 +59,7 @@ Prometheus is configured to scrape metrics from the OTEL collector.
 
 ## 5. OtelConsoleApp (sample)
 - A small sample .NET console application that generates synthetic traces, metrics and logs to demonstrate the stack
-- By default the sample pushes telemetry to the local OpenTelemetry Collector over gRPC (OTLP/gRPC)
-- The project's configuration (`OtelConsoleAppConfig.cs` / `Program.cs`) shows the exporter configured for gRPC
+- By default the sample pushes telemetry to the local OpenTelemetry Collector over gRPC (OTLP/gRPC default for OTEL libraries in dotnet)
 - There are debug toggles (commented out) in the sample that you can enable to print verbose telemetry or enable an internal debug exporter
 
 You an use this sample to generate telemetry to test linking between logs, traces and metrics in Grafana.
