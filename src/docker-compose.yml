@@ -22,6 +22,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./config-prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command: --web.enable-otlp-receiver --config.file=/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
     networks:
@@ -31,8 +32,9 @@ services:
     image: grafana/grafana:latest
     restart: unless-stopped
     environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true    
     ports:
       - "3000:3000"
     volumes:
@@ -47,6 +49,7 @@ services:
 
   loki:
     image: grafana/loki:latest
+    restart: unless-stopped
     volumes:
       - ./config-loki.yaml:/etc/loki/local-config.yaml:ro
     command: -config.file=/etc/loki/local-config.yaml

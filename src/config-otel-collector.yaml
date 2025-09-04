@@ -15,16 +15,17 @@ extensions:
     endpoint: 0.0.0.0:55679
 
 exporters:
-  prometheusremotewrite:
-    endpoint: "http://prometheus:9090/api/v1/write"
-  otlphttp:
-    endpoint: "http://loki:3100/otlp/v1/logs"
-  otlp:
-    endpoint: "tempo:3201"
+  otlphttp/prometheus:
+    endpoint: "http://prometheus:9090/api/v1/otlp/"
+  otlphttp/loki:
+    endpoint: "http://loki:3100/otlp"
+  otlp/tempo:
+    endpoint: tempo:3201
     tls:
       insecure: true
-  debug:
-    verbosity: detailed
+  # to view what's coming in/going out in the otel-collector logs
+  # debug:
+  #   verbosity: detailed
 
 processors:
   batch:
@@ -44,12 +45,12 @@ service:
     metrics:
       receivers: [otlp]
       processors: [memory_limiter, resourcedetection, batch]
-      exporters: [prometheusremotewrite, debug]
+      exporters: [otlphttp/prometheus] #[otlphttp/prometheus, debug]
     traces:
       receivers: [otlp]
       processors: [memory_limiter, resourcedetection, batch]
-      exporters: [otlp, debug]
+      exporters: [otlp/tempo] #[otlp/tempo, debug]
     logs:
       receivers: [otlp]
       processors: [memory_limiter, resourcedetection, batch]
-      exporters: [otlphttp, debug]
+      exporters: [otlphttp/loki] #[otlphttp/loki, debug]

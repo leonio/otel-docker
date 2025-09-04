@@ -1,6 +1,5 @@
 server:
   http_listen_port: 3200
-  grpc_listen_port: 3201
 
 distributor:
   receivers:
@@ -9,8 +8,37 @@ distributor:
         grpc:
           endpoint: "0.0.0.0:3201"
 
+querier:
+  max_concurrent_queries: 20
+
+query_frontend:
+  search:
+    default_result_limit: 20
+    max_duration: 0
+
+ingester:
+  max_block_duration: 5m
+
+compactor:
+  compaction:
+    block_retention: 720h
+
+metrics_generator:
+  storage:
+    path: /var/tempo/generator/wal
+  traces_storage:
+    path: /var/tempo/generator/traces
+  processor:
+    local_blocks:
+      filter_server_spans: false
+      flush_to_storage: true
+
 storage:
   trace:
     backend: local
+    wal:
+      path: /var/tempo/wal
     local:
-      path: /var/tempo/traces
+      path: /var/tempo/blocks
+    block:
+      bloom_filter_false_positive: 0.05
