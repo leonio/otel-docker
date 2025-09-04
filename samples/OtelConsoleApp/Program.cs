@@ -13,17 +13,19 @@ var builder = Host.CreateApplicationBuilder(args);
 var resourceBuilder = ResourceBuilder.CreateDefault()
     .AddService(OtelConsoleAppConfig.ServiceName, OtelConsoleAppConfig.ServiceVersion);
 
-using var listener = new MyEventListener();
-
+// purely optional: OTEL SDK events are helpful for troubleshooting
+// using var listener = new MyEventListener();
 builder.Logging
     .AddConsole()
     .SetMinimumLevel(LogLevel.Debug)
     .AddOpenTelemetry(logging =>
     {
         logging.SetResourceBuilder(resourceBuilder);
-        //logging
-        //    //.AddConsoleExporter()
-        //    .AddOtlpExporter();
+        logging.IncludeScopes = true;
+        logging.IncludeFormattedMessage = true;
+        logging
+            //.AddConsoleExporter()
+            .AddOtlpExporter();
     });
 
 builder.Services.AddOpenTelemetry()
@@ -32,9 +34,9 @@ builder.Services.AddOpenTelemetry()
         metrics.SetResourceBuilder(resourceBuilder);
         metrics.AddMeter(OtelConsoleAppConfig.ServiceName);
         metrics.AddRuntimeInstrumentation();
-        //metrics
-        //    //.AddConsoleExporter()
-        //    .AddOtlpExporter();
+        metrics
+            //.AddConsoleExporter()
+            .AddOtlpExporter();
     })
     .WithTracing(tracing =>
     {
@@ -56,7 +58,6 @@ internal class MyEventListener : EventListener
 {
     protected override void OnEventSourceCreated(EventSource eventSource)
     {
-        // This is a list of known OpenTelemetry EventSource names
         if (eventSource.Name.StartsWith("OpenTelemetry-") || eventSource.Name.StartsWith("OpenTelemetry.Exporter-"))
         {
             EnableEvents(eventSource, EventLevel.LogAlways);

@@ -6,10 +6,10 @@ using Bogus;
 
 namespace OtelConsoleApp;
 
-public class OrderWorker : BackgroundService
+public sealed class OrderWorker : BackgroundService
 {
+    private static readonly ActivitySource _activitySource = OrderTraceSourceProvider.OrderActivities;
     private readonly ILogger<OrderWorker> _logger;
-    private readonly ActivitySource _activitySource = new ActivitySource("ConsoleAppActivitySource");
     private readonly Faker _faker = new Faker();
     private readonly Faker<Product> _productFaker;
     private readonly Faker<Customer> _customerFaker;
@@ -19,6 +19,7 @@ public class OrderWorker : BackgroundService
     public OrderWorker(ILogger<OrderWorker> logger, OrderMetrics metrics)
     {
         _logger = logger;
+
         _productFaker = new Faker<Product>()
             .RuleFor(p => p.Id, f => f.Random.Int(1, 100))
             .RuleFor(p => p.Name, f => f.Commerce.ProductName())
@@ -50,7 +51,14 @@ public class OrderWorker : BackgroundService
                 orderActivity?.SetTag("order.total", orderTotal);
                 orderActivity?.SetTag("order.items.count", products.Count);
 
-                using (var scope = _logger.BeginScope("Order ID: {OrderId}", Guid.NewGuid()))
+                //Dictionary<string, object?> scopeState = new()
+                //{
+                //    ["OrderId"] = Guid.CreateVersion7().ToString(),
+                //    ["trace_id"] = orderActivity?.TraceId.ToString(),
+                //    ["span_id"] = orderActivity?.SpanId.ToString()
+                //};
+
+                using (var scope = _logger.BeginScope("Begin processing order {OrderGuid}", Guid.CreateVersion7()))
                 {
                     _logger.LogInformation(
                         "Processing order for {CustomerName} from {Country}. Order total: ${OrderTotal:F2}",
@@ -86,9 +94,16 @@ public class OrderWorker : BackgroundService
                             ? "Payment Declined"
                             : "Insufficient Inventory";
 
+                        using var errorDetailsActivity = _activitySource.StartActivity("ProcessErrorDetails");
                         _logger.LogError("Order processing failed: {Error}", error);
                         orderActivity?.SetTag("error", true);
                         orderActivity?.SetTag("error.type", error);
+                        errorDetailsActivity?.SetTag("error.detail", error);
+
+                        // Add trace/span ids to the error log as well (redundant if scope is present)
+                        _logger.LogDebug("TraceId={TraceId} SpanId={SpanId}", orderActivity?.TraceId.ToString(), orderActivity?.SpanId.ToString());
+
+                        await Task.Delay(_faker.Random.Int(200, 800), stoppingToken);
                     }
                     else
                     {
