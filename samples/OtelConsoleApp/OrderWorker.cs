@@ -51,13 +51,6 @@ public sealed class OrderWorker : BackgroundService
                 orderActivity?.SetTag("order.total", orderTotal);
                 orderActivity?.SetTag("order.items.count", products.Count);
 
-                //Dictionary<string, object?> scopeState = new()
-                //{
-                //    ["OrderId"] = Guid.CreateVersion7().ToString(),
-                //    ["trace_id"] = orderActivity?.TraceId.ToString(),
-                //    ["span_id"] = orderActivity?.SpanId.ToString()
-                //};
-
                 using (var scope = _logger.BeginScope("Begin processing order {OrderGuid}", Guid.CreateVersion7()))
                 {
                     _logger.LogInformation(
@@ -99,9 +92,6 @@ public sealed class OrderWorker : BackgroundService
                         orderActivity?.SetTag("error", true);
                         orderActivity?.SetTag("error.type", error);
                         errorDetailsActivity?.SetTag("error.detail", error);
-
-                        // Add trace/span ids to the error log as well (redundant if scope is present)
-                        _logger.LogDebug("TraceId={TraceId} SpanId={SpanId}", orderActivity?.TraceId.ToString(), orderActivity?.SpanId.ToString());
 
                         await Task.Delay(_faker.Random.Int(200, 800), stoppingToken);
                     }
