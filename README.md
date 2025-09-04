@@ -52,3 +52,11 @@ Prometheus is configured to scrape metrics from the OTEL collector.
   1. Go to http://localhost:3000
   2. Navigate to Explore > Tempo
   3. Query traces by `TraceID` or use the search interface with [TraceQL](https://grafana.com/docs/tempo/latest/traceql/construct-traceql-queries/)
+
+## 5. OtelConsoleApp (sample)
+- A small sample .NET console application that generates synthetic traces, metrics and logs to demonstrate the stack
+- By default the sample pushes telemetry to the local OpenTelemetry Collector over gRPC (OTLP/gRPC)
+- The project's configuration (`OtelConsoleAppConfig.cs` / `Program.cs`) shows the exporter configured for gRPC
+- There are debug toggles (commented out) in the sample that you can enable to print verbose telemetry or enable an internal debug exporter
+
+You an use this sample to generate telemetry to test linking between logs, traces and metrics in Grafana.
