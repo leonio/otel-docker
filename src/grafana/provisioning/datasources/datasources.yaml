@@ -5,11 +5,46 @@ datasources:
     access: proxy
     url: http://prometheus:9090
     isDefault: true
+    uid: prometheus
   - name: Loki
     type: loki
     access: proxy
     url: http://loki:3100
+    uid: loki
+    jsonData:
+      derivedFields:
+        - datasourceUid: tempo
+          name: TraceID
+          matcherType: label
+          matcherRegex: TraceId
+          internal: true
+          url: '$${__value.raw}'
+          urlDisplayLabel: 'View Correlated Trace'
   - name: Tempo
     type: tempo
     access: proxy
     url: http://tempo:3200
+    uid: tempo
+    jsonData:
+      nodeGraph:
+        enabled: true
+      search:
+        hide: false
+      serviceMap:
+        datasourceUid: 'prometheus'
+      tracesToLogsV2:
+        datasourceUid: 'loki'
+        filterByTraceID: true
+        filterBySpanID: true
+        customQuery: false
+        query: '{service.name="$${__span.service.name}"} | json | line_format "{{.body}}" | trace_id="$${__trace.id}"'
+      traceToMetrics:
+        datasourceUid: 'prometheus'
+        tags: [{ key: 'service.name' }, { key: 'span.name' }]
+        queries:
+          - name: 'Request Rate'
+            query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags}[5m])) by (service_name)'
+          - name: 'Request Latency (P95)'
+            query: 'histogram_quantile(0.95, sum(rate(traces_spanmetrics_latency_bucket{$$__tags}[5m])) by (le, service_name))'
+          - name: 'Request Error Rate'
+            query: 'sum(rate(traces_spanmetrics_calls_total{status_code="error", $$__tags}[5m])) by (service_name) / sum(rate(traces_spanmetrics_calls_total{$$__tags}[5m])) by (service_name)'
